@@ -4,6 +4,7 @@ import random
 import time
 import statistics
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Standard Merge Sort Algorithm Implementation
 # Merge Sort
@@ -38,19 +39,22 @@ def merge(L,R):
   return result
 
 # Partition
-def partition(A,low,high, pivot=None):
+def partition(A, pivot=None):
+  low = 0
+
   if pivot == None:
-    pivot = A[high]
-  i = low - 1
-  for j in range(low,high):
-    if A[j] <= pivot:
+    pivot = A[0]
+  i = 0
+
+  for j in range(1,len(A)):
+    if A[j] < pivot:
       i = i + 1
       A[i],A[j] = A[j],A[i]
+  pivot_pos = i
+  A[0],A[pivot_pos] = A[pivot_pos],A[0]
+  return i
 
-  A[i+1],A[high] = A[high],A[i+1]
-  return (i+1)
-
-
+ 
 def algo1(A,k):
   # sort the list
   A = mergesort(A)
@@ -61,7 +65,7 @@ def algo1(A,k):
 
 def algo2(A,k):
   # partition the list around the last element
-  v = partition(A,0,len(A)-1)
+  v = partition(A)
   # if the kth smallest element is the last element, return it
   if v == k:
     return A[v]
@@ -74,35 +78,20 @@ def algo2(A,k):
 
 
 # Use recursive partition and median of medians to find kth smallest element 0 indexed
-def algo3(A, k):
-    print(A)
-    print("k = " + str(k))
+def algo3(A, i):
 
     #divide A into sublists of len 5
     sublists = [A[j:j+5] for j in range(0, len(A), 5)]
     medians = [sorted(sublist)[len(sublist)//2] for sublist in sublists]
-    if len(A) <= 5:
-        pivot = sorted(A)[k]
-        return pivot
-    
+    if len(medians) <= 5:
+        pivot = sorted(medians)[len(medians)//2]
     else:
         #the pivot is the median of the medians
         pivot = algo3(medians, len(medians)//2)
 
-        #partitioning step
-        pos = partition(A, 0, len(A)-1, pivot)
-
-        if pos == k:
-            return pivot
-        elif pos > k:
-            return algo3(A[:pos], k)
-        else:
-            return algo3(A[pos+1:], k-pos)
-    
-""" 
     #partitioning step
     low = [j for j in A if j < pivot]
-    high = [j for j in A if j > pivot] 
+    high = [j for j in A if j > pivot]
 
     k = len(low)
     if i < k:
@@ -110,16 +99,46 @@ def algo3(A, k):
     elif i > k:
         return algo3(high,i-k-1)
     else: #pivot = k
-        return pivot """
+        return pivot 
+
+""" def algo3(A,k):
+  print(A)
+  print(k)
+  if len(A) <= 5:
+    return sorted(A)[k-1]
+  else:
+    size = len(A)//5
+    medians = []
+    for i in range(0,size,5):
+      medians.append(sorted(A[i:i+5])[len(A[i:i+5])//2])
+    if size*5 < len(A):
+      medians.append(sorted(A[size*5:])[len(A[size*5:])//2])
+
+
+    v = algo3(medians,math.ceil(size/2))
+    # partition the list around the last element
+    pivot_pos = partition(A,v)
+
+    if k == pivot_pos:
+      return v
+    elif k < pivot_pos:
+      return algo3(A[:pivot_pos],k)
+    else:
+      return algo3(A[pivot_pos+1:],k-pivot_pos-1)ß
+ """
 # Testing Cases:
 
-""" # Test Case 1: A = [1,2,3,4,5,6,7,8,9,10], k = 5, return 6
+# Test Case 1: A = [1,2,3,4,5,6,7,8,9,10], k = 5, return 6
 A = [1,2,3,4,5,6,7,8,9,10]
 k = 5
 n = len(A)
 
 print("Algorithm 1: ",algo1(A,k))
+A = [1,2,3,4,5,6,7,8,9,10]
+k = 5
 print("Algorithm 2: ",algo2(A,k))
+A = [1,2,3,4,5,6,7,8,9,10]
+k = 5
 print("Algorithm 3: ",algo3(A,k))
 
 # Testing Case 2: A = [10,2,8,4,6,5,7,3,9,1], k = 0, return 1
@@ -139,7 +158,7 @@ n = len(A)
 
 print("Algorithm 1: ",algo1(A,k))
 print("Algorithm 2: ",algo2(A,k))
-print("Algorithm 3: ",algo3(A,k))  """
+print("Algorithm 3: ",algo3(A,k))  
 
 # Testing Case 4: A = [10,2,8,4,6,5,7,3,9,1], k = 5, return 6
 
@@ -169,7 +188,6 @@ print("Algorithm 1: ",algo1(A,k))
 print("Algorithm 2: ",algo2(A,k))
 print("Algorithm 3: ",algo3(A,k)) 
 
-""" 
 # Testing Case 6: A = [5,2,3] k = 1, return 3
 A = [5,2,3]
 k = 1
@@ -210,18 +228,19 @@ print("Algorithm 1: ",algo1(A,k))
 print("Algorithm 2: ",algo2(A,k))
 print("Algorithm 3: ",algo3(A,k))  
 
- """
 input()
+
 
 # Experiment
 
 algo1_avg = []
 algo2_avg = []
 algo3_avg = []
+iters = 50
 
 df = pd.DataFrame(columns=['n','algo1','algo2','algo3'])
 
-for i in range(20):
+for i in range(1,iters):
 
   algo1_time = []
   algo2_time = []
@@ -270,8 +289,50 @@ for i in range(20):
   df = pd.concat([df,pd.DataFrame({'n':[n],'algo1':[algo1_avg[-1]],'algo2':[algo2_avg[-1]],'algo3':[algo3_avg[-1]]})],ignore_index=True)
 
 # print the result
-print("Algorithm 1: ",algo1_avg)
-print("Algorithm 2: ",algo2_avg)
-print("Algorithm 3: ",algo3_avg) 
-
 df.to_csv('data.csv',index=False)
+
+# Plotting
+
+# Plot Standard Matrix Multiplication
+plt.grid()
+plt.title("Algorithm 1: Mergesort")
+plt.xlabel("2^n")
+plt.ylabel("Average time (s)")
+plt.plot([x for x in range(1,iters)], algo1_avg,label="Algorithm 1")
+plt.savefig("algo1.png")
+
+# clear plot
+plt.clf()
+
+# plot Divide and Conquer Matrix Multiplication
+plt.grid()
+plt.title("Algorithm 2: Partition")
+plt.xlabel("2^n")
+plt.ylabel("Average time (s)")
+plt.plot([x for x in range(1,iters)],algo2_avg,label="Algorithm 2")
+plt.savefig("algo2.png")
+
+# clear plot
+plt.clf()
+
+# plot Strassen's Matrix Multiplication
+plt.grid()
+plt.title("Algorithm 3: Median of Medians")
+plt.xlabel("2^n")
+plt.ylabel("Average time (s)")
+plt.plot([x for x in range(1,iters)],algo3_avg,label="Algorithm 3")
+plt.savefig("algo3.png")
+
+# clear plot
+plt.clf()
+
+# plot all three
+plt.grid()
+plt.title("Kth Smallest Element")
+plt.xlabel("2^n")
+plt.ylabel("Average time (s)")
+plt.plot([x for x in range(1,iters)], algo1_avg,label="Algorithm 1")
+plt.plot([x for x in range(1,iters)],algo2_avg,label="Algorithm 2")
+plt.plot([x for x in range(1,iters)],algo3_avg,label="Algorithm 3")
+plt.legend()
+plt.savefig("All.png")
